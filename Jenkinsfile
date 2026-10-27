@@ -69,36 +69,29 @@ pipeline {
             }
         }
 
-        stage('Push') {
+               stage('Push') {
             steps {
                 withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-finsecure-v2',
-                        usernameVariable: 'DH_USER',
-                        passwordVariable: 'DH_TOKEN'
+                    file(
+                        credentialsId: 'dockerhub-auth-config',
+                        variable: 'DOCKER_AUTH_FILE'
                     )
                 ]) {
                     powershell '''
                         $ErrorActionPreference = 'Stop'
-
-                        $authDirectory = Join-Path $env:TEMP (
-                            'finsecure-docker-' + [guid]::NewGuid()
+                        $configDirectory = Join-Path $env:TEMP (
+                            'docker-auth-' + [guid]::NewGuid()
                         )
 
-                        New-Item -ItemType Directory -Path $authDirectory |
+                        New-Item -ItemType Directory -Path $configDirectory |
                             Out-Null
 
                         try {
-                            $env:DH_TOKEN |
-                                docker --config "$authDirectory" login `
-                                    --username "$env:DH_USER" `
-                                    --password-stdin
+                            Copy-Item $env:DOCKER_AUTH_FILE (
+                                Join-Path $configDirectory 'config.json'
+                            )
 
-                            if ($LASTEXITCODE -ne 0) {
-                                throw 'Docker Hub login failed'
-                            }
-
-                            docker --config "$authDirectory" push `
+                            docker --config "$configDirectory" push `
                                 "$($env:IMAGE_REPO):$($env:IMAGE_TAG)"
 
                             if ($LASTEXITCODE -ne 0) {
@@ -106,7 +99,7 @@ pipeline {
                             }
                         }
                         finally {
-                            Remove-Item -Recurse -Force $authDirectory
+                            Remove-Item -Recurse -Force $configDirectory
                         }
                     '''
                 }
