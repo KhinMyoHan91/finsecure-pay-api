@@ -1,0 +1,32 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: finsecure-pay-eks
+  region: ap-southeast-1
+  version: "1.36"
+  tags:
+    Project: FinSecurePay
+    Purpose: Capstone
+
+vpc:
+  nat:
+    gateway: Disable
+  clusterEndpoints:
+    publicAccess: true
+    privateAccess: true
+
+managedNodeGroups:
+  - name: application-nodes
+    instanceType: m7i-flex.large
+    amiFamily: AmazonLinux2023
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 2
+    volumeSize: 20
+    volumeType: gp3
+    privateNetworking: false
+    ssh:
+      allow: false
+    labels:
+      project: finsecure-pay
