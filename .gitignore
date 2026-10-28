@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+pom.xml.before-boot4
+security-reports/
