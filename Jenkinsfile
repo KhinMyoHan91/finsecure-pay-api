@@ -58,6 +58,31 @@ pipeline {
                 bat 'call mvnw.cmd -B package -DskipTests'
             }
         }
+	
+	        stage('Dependency Security Gate') {
+            steps {
+                bat '''
+                    @echo off
+                    if not exist security-reports mkdir security-reports
+                    if not exist target\\dependency-scan mkdir target\\dependency-scan
+
+                    copy /Y target\\finsecure-pay-api-0.0.1-SNAPSHOT.jar target\\dependency-scan\\app.jar >nul
+                    if errorlevel 1 exit /b 1
+
+                    trivy rootfs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format table --output security-reports\\dependencies.txt target\\dependency-scan
+                    if errorlevel 1 exit /b 1
+                '''
+            }
+
+            post {
+                always {
+                    archiveArtifacts(
+                        artifacts: 'security-reports/dependencies.txt',
+                        allowEmptyArchive: true
+                    )
+                }
+            }
+        }
 
         stage('Container Build') {
             steps {
