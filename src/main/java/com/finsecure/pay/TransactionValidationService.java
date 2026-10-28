@@ -10,12 +10,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class TransactionValidationService {
-
+	
     private static final Set<String> SUPPORTED_CURRENCIES =
             Set.of("SGD", "USD", "MYR");
 
     private final BigDecimal maxAmount;
-
+    private static final int MAX_DECIMAL_PLACES = 2;
     public TransactionValidationService(
             @Value("${transactions.max-amount:10000.00}")
             BigDecimal maxAmount) {
@@ -55,7 +55,8 @@ public class TransactionValidationService {
                 errors.add("Amount exceeds the maximum transaction limit");
             }
 
-            if (transaction.amount().stripTrailingZeros().scale() > 2) {
+           if (transaction.amount().stripTrailingZeros().scale()
+        > MAX_DECIMAL_PLACES) {
                 errors.add("Amount must have at most two decimal places");
             }
         }

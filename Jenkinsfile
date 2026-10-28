@@ -53,6 +53,20 @@ pipeline {
             }
         }
 
+ stage('Static Analysis') {
+            steps {
+                bat 'call mvnw.cmd -B pmd:check'
+            }
+            post {
+                always {
+                    archiveArtifacts(
+                        artifacts: 'target/pmd.xml',
+                        allowEmptyArchive: true
+                    )
+                }
+            }
+        }
+
         stage('Package') {
             steps {
                 bat 'call mvnw.cmd -B package -DskipTests'
@@ -91,6 +105,26 @@ pipeline {
                     docker build --pull -t %IMAGE_REPO%:%IMAGE_TAG% .
                     if errorlevel 1 exit /b 1
                 '''
+            }
+        }
+
+stage('Container Security Gate') {
+            steps {
+                bat '''
+                    @echo off
+                    if not exist security-reports mkdir security-reports
+
+                    trivy image --image-src docker --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format table --output security-reports\\container.txt %IMAGE_REPO%:%IMAGE_TAG%
+                    if errorlevel 1 exit /b 1
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts(
+                        artifacts: 'security-reports/container.txt',
+                        allowEmptyArchive: true
+                    )
+                }
             }
         }
 
