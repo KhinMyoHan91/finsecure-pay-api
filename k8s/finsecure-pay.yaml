@@ -29,9 +29,11 @@ spec:
       containers:
         - name: finsecure-pay-api
           image: khinmyohan91/finsecure-pay-api:1.0.0
-          ports:
+            ports:
             - name: http
               containerPort: 8080
+            - name: management
+              containerPort: 8081
           envFrom:
             - configMapRef:
                 name: finsecure-pay-config

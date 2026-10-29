@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: finsecure-pay-metrics
+  namespace: finsecure
+  labels:
+    app: finsecure-pay-api
+spec:
+  type: ClusterIP
+  selector:
+    app: finsecure-pay-api
+  ports:
+    - name: management
+      port: 8081
+      targetPort: management
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: finsecure-pay-api
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - finsecure
+  selector:
+    matchLabels:
+      app: finsecure-pay-api
+  endpoints:
+    - port: management
+      path: /actuator/prometheus
+      interval: 15s
