@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: finsecure-pay-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: finsecure-pay-availability
+      rules:
+        - alert: FinSecurePayReplicasBelowMinimum
+          expr: kube_deployment_status_replicas_available{namespace="finsecure",deployment="finsecure-pay-api"} < 2
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "FinSecure Pay has fewer than two available replicas"
+            description: "Available replicas have remained below the minimum of two for one minute."

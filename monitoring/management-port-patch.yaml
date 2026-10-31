@@ -1,0 +1,10 @@
+spec:
+  template:
+    spec:
+      containers:
+        - name: finsecure-pay-api
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: management
+              containerPort: 8081

@@ -1,0 +1,58 @@
+pipeline {
+    agent any
+
+    options {
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Check Prometheus Alert') {
+            steps {
+                script {
+                    def state = powershell(
+                        returnStdout: true,
+                        script: '''
+                            $ErrorActionPreference = 'Stop'
+
+                            $response = Invoke-RestMethod `
+                                "http://127.0.0.1:9091/api/v1/alerts"
+
+                            if ($response.status -ne 'success') {
+                                throw 'Prometheus query failed'
+                            }
+
+                            $alerts = @($response.data.alerts | Where-Object {
+                                $_.labels.alertname -eq 'FinSecurePayReplicasBelowMinimum' `
+                                -and $_.labels.namespace -eq 'finsecure'
+                            })
+
+                            if ($alerts.state -contains 'firing') {
+                                Write-Output 'FIRING'
+                            } elseif ($alerts.state -contains 'pending') {
+                                Write-Output 'PENDING'
+                            } else {
+                                Write-Output 'INACTIVE'
+                            }
+                        '''
+                    ).trim()
+
+                    echo "Detected alert state: ${state}"
+                    currentBuild.description = state
+
+                    if (state == 'FIRING') {
+                        emailext(
+                            to: 'khinmyoehann@gmail.com',
+                            subject: 'FIRING: FinSecure Pay replicas below minimum',
+                            body: """Prometheus detected fewer than two available replicas for at least one minute.
+Notification build: ${env.BUILD_URL}"""
+                        )
+
+                        echo 'Email step completed; verify receipt in Gmail.'
+                    } else {
+                        echo 'No email sent because the alert is not FIRING.'
+                    }
+                }
+            }
+        }
+    }
+}

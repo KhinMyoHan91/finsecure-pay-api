@@ -189,11 +189,28 @@ stage('Container Security Gate') {
     }
 
     post {
-        success {
+          success {
             echo "Deployed ${env.IMAGE_REPO}:${env.IMAGE_TAG}"
+
+            emailext(
+                to: 'khinmyoehann@gmail.com',
+                subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """FinSecure Pay pipeline succeeded.
+Image: ${env.IMAGE_REPO}:${env.IMAGE_TAG}
+Build: ${env.BUILD_URL}"""
+            )
         }
+
         failure {
             echo 'Pipeline failed. Review the first failing stage.'
+
+            emailext(
+                to: 'khinmyoehann@gmail.com',
+                subject: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """FinSecure Pay pipeline failed.
+Review the console for the failing stage.
+Build: ${env.BUILD_URL}"""
+            )
         }
     }
 }

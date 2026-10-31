@@ -1,0 +1,14 @@
+alertmanager:
+  alertmanagerSpec:
+    secrets: []
+
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: discard
+      group_by:
+        - alertname
+        - namespace
+    receivers:
+      - name: discard
